@@ -1,0 +1,44 @@
+buildscript {
+	ext {
+		springBootVersion = '2.0.3.RELEASE'
+	}
+    repositories {
+     mavenCentral()
+    }
+    dependencies {
+    classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+plugins {
+    id 'org.springframework.boot' version '2.0.3.RELEASE'
+    id 'java'
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'maven'
+
+group = 'compass'
+version = '0.1'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8 
+compileJava.options.encoding = 'UTF-8'    
+compileTestJava.options.encoding = 'UTF-8'
+
+dependencies {
+	compile('org.springframework.boot:spring-boot-starter-web')
+	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-websocket
+	compile group: 'org.springframework.boot', name: 'spring-boot-starter-websocket', version: '2.0.3.RELEASE'
+    // Use JUnit test framework
+    testImplementation 'junit:junit:4.12'
+    
+	compile('com.alibaba:fastjson:1.2.58')
+	// https://mvnrepository.com/artifact/org.mapdb/mapdb
+	compile group: 'org.mapdb', name: 'mapdb', version: '2.0-beta13'
+}
+
+repositories {
+    mavenCentral()
+}
