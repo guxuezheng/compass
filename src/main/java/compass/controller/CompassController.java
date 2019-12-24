@@ -6,11 +6,13 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mapdb.HTreeMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.fastjson.JSONArray;
@@ -18,9 +20,10 @@ import com.alibaba.fastjson.JSONObject;
 
 import compass.bean.ClusterTask;
 import compass.bean.Task;
+import compass.bean.ansiblevar.Docker;
 import compass.dao.IClusterTaskDao;
 import compass.dao.IDBClient;
-import compass.dao.impl.DBClient;
+import compass.runtime.AnsiblePathUnit;
 import compass.runtime.Crontab;
 
 @RestController
@@ -35,7 +38,8 @@ public class CompassController {
 	Logger log = LogManager.getLogger(Crontab.class);
 	
 	 @GetMapping("/createCluster")
-	 public JSONObject createCluster(@RequestParam String clusterId){
+	 public JSONObject createCluster(@RequestParam String clusterId,@RequestParam String components){
+		 System.out.println(components);
 		 Map<String, String> clusterTaskMap = clusterTaskDao.createClusterTaskMap(clusterId, 1+"", getTestTask());
 		 JSONObject json = (JSONObject)JSONObject.toJSON(clusterTaskMap);
 		 log.info("集群任务:" + clusterId + " 创建成功");
@@ -56,20 +60,28 @@ public class CompassController {
 		 return json;
 	 }
 	 
-	 @GetMapping("/getLog")
-	 public void getLog(@RequestParam String clusterId,@RequestParam String component) {
-		 String taskId = clusterId + "-" + component + "-" + "logout";
-		 int index = 0;
-		 while(true) {
-			 HTreeMap<String, String> hashMap = dbClient.getDb().hashMap(taskId);
-			 for (int i = index; i < hashMap.size(); i++) {
-				 System.err.println(hashMap.get(i+""));
-				 index++;
-		        }
-			 try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {e.printStackTrace();}
-		 }
+//	 @ResponseBody
+//	 @RequestMapping(value = "/ansiblevar/docker", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
+//	 public JSONObject getByJSON(@RequestBody JSONObject jsonParam) {
+//		 
+//		 
+//		 
+//		 return null;
+//	 }
+	 
+	 
+	 /**
+	  * 获取所有componentbean的代码格式
+	  * @return
+	 * @throws ClassNotFoundException 
+	  */
+	 @GetMapping("/getComponentAnsibleBean")
+	 public JSONObject getComponentAnsibleVar() throws ClassNotFoundException{
+//		 List<String> allCluster = clusterTaskDao.getAllClusterSet();
+//		 JSONArray json = (JSONArray) JSONArray.toJSON(allCluster);
+		 Docker docker = new Docker();
+		 JSONObject json = (JSONObject)JSONObject.toJSON(docker);
+		 return json;
 	 }
 	 
 	 /**

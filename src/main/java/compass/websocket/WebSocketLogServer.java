@@ -19,14 +19,14 @@ import org.springframework.stereotype.Service;
 
 import compass.dao.impl.DBClient;
 
-@ServerEndpoint("/websocket/{clusterId}/{component}")
+@ServerEndpoint("/websocketlog/{clusterId}/{component}")
 @Component
 @Service
-public class WebSocketServer {
+public class WebSocketLogServer {
 
-	static Log log = LogFactory.getLog(WebSocketServer.class);
+	static Log log = LogFactory.getLog(WebSocketLogServer.class);
 	// concurrent包的线程安全Set，用来存放每个客户端对应的MyWebSocket对象。
-	private static CopyOnWriteArraySet<WebSocketServer> webSocketSet = new CopyOnWriteArraySet<WebSocketServer>();
+	private static CopyOnWriteArraySet<WebSocketLogServer> webSocketSet = new CopyOnWriteArraySet<WebSocketLogServer>();
 
 	// 与某个客户端的连接会话，需要通过它来给客户端发送数据
 	private Session session;
@@ -72,7 +72,7 @@ public class WebSocketServer {
 	@OnMessage
 	public void onMessage(String message, Session session) {
 		// 群发消息
-		for (WebSocketServer item : webSocketSet) {
+		for (WebSocketLogServer item : webSocketSet) {
 			try {
 				item.sendComponentLog();
 			} catch (IOException e) {
