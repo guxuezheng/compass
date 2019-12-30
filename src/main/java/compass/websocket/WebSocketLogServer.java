@@ -93,7 +93,7 @@ public class WebSocketLogServer {
 	}
 
 	/**
-	 * 实现服务器主动推送
+	 * 服务器主动推送日志
 	 */
 	public void sendComponentLog() throws IOException {
 		String taskId = clusterId + "-" + component + "-" + "logout";

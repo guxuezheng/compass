@@ -4,13 +4,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Set;
 
 import org.mapdb.HTreeMap;
 
 import compass.dao.IDBClient;
 
-public class WriteLogThread extends Thread{
+public class WriteLogToDBThread extends Thread{
 	
 	private InputStream inputStream;
 	
@@ -18,7 +17,7 @@ public class WriteLogThread extends Thread{
 	
 	private IDBClient db;
 
-	public WriteLogThread(InputStream inputStream,String taskID,IDBClient db) {
+	public WriteLogToDBThread(InputStream inputStream,String taskID,IDBClient db) {
 		this.inputStream = inputStream;
 		this.taskID = taskID;
 		this.db = db;

@@ -26,7 +26,13 @@ public class Crontab {
 		processController.startProcessTask();
     }
 	
-	
+	/**
+	 * 每20秒检测一次
+	 */
+	@Scheduled(cron = "0/20 * * * * ? ")
+    private void checkTask() {
+		processController.checkProcessResult();
+    }
 	
 	
 }

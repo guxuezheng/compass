@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import compass.bean.ClusterTask;
 import compass.bean.Task;
 import compass.dao.IClusterTaskDao;
-import compass.runtime.Crontab;
 import compass.status.TaskStatus;
 
 /**
@@ -24,7 +23,7 @@ import compass.status.TaskStatus;
 public class ClusterTaskDao implements IClusterTaskDao {
 
 	
-	Logger log = LogManager.getLogger(Crontab.class);
+	Logger log = LogManager.getLogger(ClusterTaskDao.class);
 	/**
 	 * 当前位置
 	 */
@@ -42,7 +41,7 @@ public class ClusterTaskDao implements IClusterTaskDao {
 
 	/**
 	 * 单一集群内的数据格式包含如下: 
-	 * 	1. 全局任务,key值为 $clusterId-cluster 记录包含执行任务步骤,集群所有状态列表
+	 * 	1. 全局任务,key值为 $clusterId 记录包含执行任务步骤,集群所有状态列表
 	 *  # $clusterId-etcd: etcd组件 
 	 *  # $clusterId-docker: docker组件 
 	 *  # $clusterId-harbor: harbor组件 
@@ -67,9 +66,16 @@ public class ClusterTaskDao implements IClusterTaskDao {
 	 */
 	@Override
 	public Map<String, String> createClusterTaskMap(String clusterId, String current, List<Task> tasks) {
-		String cluterMapName = clusterId + "-cluster";
+		String cluterMapName = clusterId;
+		//复制安装包到临时目录
+//		boolean cpSuccess = AnsibleCommondUtils.cpAnsibleFileToTmp(clusterId);
+//		if(!cpSuccess) {
+//			log.error("Copying files failed : clusterid = " + clusterId);
+//			return null;
+//		}
 		boolean insertSuccess = insertCluserToClusterSet(clusterId);
 		if(!insertSuccess) {
+			log.error("insert clusters to clusterset failed : clusterid = " + clusterId);
 			return null;
 		}
 		if (db.getDb().exists(cluterMapName)) {
@@ -78,7 +84,7 @@ public class ClusterTaskDao implements IClusterTaskDao {
 		HTreeMap<String, String> clusterMap = db.getDb().hashMap(cluterMapName);
 		clusterMap.put(currentKey, current);
 		clusterMap.put(taskSizeKey, tasks.size() + "");
-		clusterMap.put(clusterStatusKey, TaskStatus.running + "");
+		clusterMap.put(clusterStatusKey, TaskStatus.wait + "");
 		for (Task task : tasks) {
 			String component = task.getComponent();
 			String step = task.getStep();
@@ -104,7 +110,7 @@ public class ClusterTaskDao implements IClusterTaskDao {
 	private boolean insertCluserToClusterSet(String clusterId) {
 		try {
 			String clustersName = "clusters";
-			String cluterName = clusterId + "-cluster";
+			String cluterName = clusterId;
 			Set<String> hashSet = db.getDb().hashSet(clustersName);
 			hashSet.add(cluterName);
 			db.getDb().commit();
@@ -120,7 +126,7 @@ public class ClusterTaskDao implements IClusterTaskDao {
 	 */
 	@Override
 	public Map<String, String> getGlobalTaskMap(String clusterId) {
-		String cluterMapName = clusterId + "-cluster";
+		String cluterMapName = clusterId;
 		HTreeMap<String, String> clusterMap = db.getDb().hashMap(cluterMapName);
 		return clusterMap;
 	}
@@ -138,7 +144,7 @@ public class ClusterTaskDao implements IClusterTaskDao {
 				continue;
 			}
 			if(clusterMap.get(key).equals(current)) {
-				return key;
+				return key.split("-")[1];
 			}
 		}
 		return null;
@@ -245,7 +251,7 @@ public class ClusterTaskDao implements IClusterTaskDao {
 	 */
 	public ClusterTask getClusterTaskStatus(String clusterId) {
 		ClusterTask clusterTask = new ClusterTask();
-		String cluterMapName = clusterId + "-cluster";
+		String cluterMapName = clusterId;
 		if (!db.getDb().exists(cluterMapName)) {
 			return null;
 		}
@@ -253,6 +259,7 @@ public class ClusterTaskDao implements IClusterTaskDao {
 		Set<String> keySet = hashMap.keySet();
 		clusterTask.setTaskSize(hashMap.get(taskSizeKey));
 		clusterTask.setCurrent(hashMap.get(currentKey));
+		clusterTask.setStatus(hashMap.get(clusterStatusKey));
 		List<Task> tasks = new ArrayList<Task>();
 		for (String key : keySet) {
 			if (key.equals(taskSizeKey) || key.equals(currentKey) || key.equals(clusterStatusKey)) {
@@ -268,7 +275,7 @@ public class ClusterTaskDao implements IClusterTaskDao {
 
 	@Override
 	public boolean isExist(String clusterId) {
-		String cluterMapName = clusterId + "-cluster";
+		String cluterMapName = clusterId;
 		return db.getDb().exists(cluterMapName);
 	}
 	
@@ -277,7 +284,7 @@ public class ClusterTaskDao implements IClusterTaskDao {
 		Set<String> hashSet = db.getDb().hashSet("clusters");
 		List<String> list = new ArrayList<String>();
 		for (String clusterId : hashSet) {
-			list.add(clusterId.replace("-cluster", ""));
+			list.add(clusterId);
 		}
 		return list;
 	}

@@ -1,7 +1,9 @@
 package compass.bean.ansiblevar;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -9,13 +11,33 @@ import java.util.List;
  * @author GuXueZheng
  *
  */
-public class Docker {
+public class Docker extends AnsibleVar{
 	
 	private String dataDir = "/data/docker";
 
 	private List<String> registryMirrors = new ArrayList<String>();
 	
 	private List<String> insecureRegistries = new ArrayList<String>();
+	
+	public Map<String,String> keyAnnoations = new HashMap<String, String>(){
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -3415479635564007515L;
+		{
+			put("registryMirrors", "默认仓库");
+			put("insecureRegistries", "可信仓库");
+			put("dataDir", "存储位置");
+		}
+	};
+		
+	public Map<String, String> getKeyAnnoations() {
+		return keyAnnoations;
+	}
+
+	public void setKeyAnnoations(Map<String, String> keyAnnoations) {
+		this.keyAnnoations = keyAnnoations;
+	}
 
 	public String getDataDir() {
 		return dataDir;
