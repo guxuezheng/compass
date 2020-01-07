@@ -19,7 +19,7 @@ import com.alibaba.fastjson.JSONObject;
 import compass.bean.ClusterTask;
 import compass.bean.Task;
 import compass.bean.ansiblevar.Docker;
-import compass.dao.IClusterTaskDao;
+import compass.dao.IClusterDao;
 import compass.dao.IDBClient;
 import compass.runtime.Crontab;
 
@@ -31,7 +31,7 @@ public class CompassController {
 	IDBClient dbClient;
 
 	@Autowired
-	private IClusterTaskDao clusterTaskDao;
+	private IClusterDao clusterTaskDao;
 	Logger log = LogManager.getLogger(Crontab.class);
 
 	@GetMapping("/createCluster")

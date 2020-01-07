@@ -13,17 +13,18 @@ import org.springframework.stereotype.Service;
 
 import compass.bean.ClusterTask;
 import compass.bean.Task;
-import compass.dao.IClusterTaskDao;
+import compass.dao.IClusterDao;
+import compass.dao.IComponentDao;
 import compass.status.TaskStatus;
 
 /**
  * @author GuXueZheng
  */
 @Service
-public class ClusterTaskDao implements IClusterTaskDao {
+public class ClusterDao implements IClusterDao {
 
 	
-	Logger log = LogManager.getLogger(ClusterTaskDao.class);
+	Logger log = LogManager.getLogger(ClusterDao.class);
 	/**
 	 * 当前位置
 	 */
@@ -56,7 +57,8 @@ public class ClusterTaskDao implements IClusterTaskDao {
 	 * 	$componentId根据全局的集群key获取 map中的value格式为0/1/2/3/4的数字, 
 	 * 	0: 任务未执行 1： 任务执行中 2： 任务执行成功 3: 任务执行失败 4: 不存在
 	 */
-
+	@Autowired
+	IComponentDao componentDao;
 	@Autowired
 	DBClient db;
 
@@ -161,32 +163,6 @@ public class ClusterTaskDao implements IClusterTaskDao {
 	}
 
 	/**
-	 * @describe: 根据组件和集群id,获取运行状态
-	 * @param clusterId
-	 * @param type
-	 * @return
-	 */
-	@Override
-	public Integer getTaskStatus(String clusterId, String type) {
-		String cluterMapName = clusterId + "-" + type;
-		return getTaskStatus(cluterMapName);
-	}
-
-	/**
-	 * @describe: 根据组件和集群id,获取运行状态
-	 * @param clusterId
-	 * @param type
-	 * @return
-	 */
-	@Override
-	public Integer getTaskStatus(String mapKey) {
-		if (!db.getDb().exists(mapKey)) {
-			return TaskStatus.noExist;
-		}
-		return db.getDb().atomicInteger(mapKey).get();
-	}
-
-	/**
 	 * @describe: 获取下一次任务,同时主流程向下执行,如果没有任务,获取为null
 	 * @return noexists 为null,
 	 */
@@ -265,7 +241,7 @@ public class ClusterTaskDao implements IClusterTaskDao {
 			if (key.equals(taskSizeKey) || key.equals(currentKey) || key.equals(clusterStatusKey)) {
 				continue;
 			}
-			Integer status = getTaskStatus(key);
+			Integer status = componentDao.getComponentStatus(key);
 			Task task = new Task(hashMap.get(key), key, status + "");
 			tasks.add(task);
 		}
@@ -294,6 +270,14 @@ public class ClusterTaskDao implements IClusterTaskDao {
 		HTreeMap<Object, Object> hashMap = db.getDb().hashMap(clusterId);
 		hashMap.put(clusterStatusKey, TaskStatus.success + "");
 		db.getDb().commit();
-		log.info("恭喜您, 集群: " + clusterId + "部署完毕,请开始使用吧!");
+		log.info("恭喜, 集群: " + clusterId + " 部署完毕,请开始使用吧!");
+	}
+
+
+	@Override
+	public void setClusterStatus(String clusterId, Integer status) {
+		HTreeMap<String, String> clusterMap = db.getDb().hashMap(clusterId);
+		clusterMap.put(clusterStatusKey, status + "");
+		db.getDb().commit();
 	}
 }

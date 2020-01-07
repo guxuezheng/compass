@@ -60,6 +60,7 @@ public class WebSocketLogServer {
 	 */
 	@OnClose
 	public void onClose() {
+		log.info("链接断开 : " + clusterId + "-" + component);
 		webSocketSet.remove(this); // 从set中删除
 	}
 
@@ -85,9 +86,10 @@ public class WebSocketLogServer {
 	 * 
 	 * @param session
 	 * @param error
+	 * @throws IOException 
 	 */
 	@OnError
-	public void onError(Session session, Throwable error) {
+	public void onError(Session session, Throwable error) throws IOException {
 		log.error("发生错误");
 		error.printStackTrace();
 	}

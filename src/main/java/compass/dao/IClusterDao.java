@@ -6,17 +6,13 @@ import java.util.Map;
 import compass.bean.ClusterTask;
 import compass.bean.Task;
 
-public interface IClusterTaskDao {
+public interface IClusterDao {
 	
 	Map<String,String> createClusterTaskMap(String clusterId,String current,List<Task> tasks);
 	
 	Map<String,String> getGlobalTaskMap(String clusterId);
 	
 	String getClusterCurrentTask(String clusterId);
-	
-	Integer getTaskStatus(String clusterId, String type);
-	
-	Integer getTaskStatus(String mapKey);
 	
 	String nextTask(String clusterId);
 	
@@ -29,6 +25,8 @@ public interface IClusterTaskDao {
 	boolean hasNext(String clusterId);
 	
 	void clusterComplete(String clusterId);
+	
+	void setClusterStatus(String clusterId,Integer status);
 	
 	String getClusterCurrentStatus(String clusterId);
 }

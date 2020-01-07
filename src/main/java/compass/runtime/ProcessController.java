@@ -4,18 +4,17 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Set;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mapdb.HTreeMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import compass.context.Context;
 import compass.context.IContextController;
-import compass.dao.IClusterTaskDao;
-import compass.dao.impl.DBClient;
+import compass.dao.IClusterDao;
+import compass.dao.IComponentDao;
 import compass.status.TaskStatus;
 
 @Service
@@ -23,17 +22,19 @@ public class ProcessController implements IProcessController {
 
 	Logger log = LogManager.getLogger(ProcessController.class);
 
+//	@Autowired
+//	DBClient db;
 	@Autowired
-	DBClient db;
+	IClusterDao clusterTaskDao;
 	@Autowired
-	IClusterTaskDao clusterTaskDao;
+	IComponentDao componentDao;
 	@Autowired
 	IContextController contextController;
 
 	@Override
 	public void startProcessTask() {
 		// 集群列表
-		Set<String> clusters = db.getDb().hashSet("clusters");
+		List<String> clusters = clusterTaskDao.getAllClusterSet();
 		for (String clusterId : clusters) {
 			if (!clusterIsBuilding(clusterId)) {
 				continue;
@@ -41,7 +42,7 @@ public class ProcessController implements IProcessController {
 			// 1. 获取当前任务
 			String taskid = clusterTaskDao.getClusterCurrentTask(clusterId);
 			// 2. 查看当前任务是否已经被标记为异常
-			Integer taskStatus = clusterTaskDao.getTaskStatus(taskid);
+			Integer taskStatus = componentDao.getComponentStatus(taskid);
 			if (taskStatus == TaskStatus.fail) {
 				log.info(taskid + " 任务状态码为 " + taskStatus + " 不进行处理...");
 				break;
@@ -56,13 +57,11 @@ public class ProcessController implements IProcessController {
 	}
 	
 	public synchronized boolean clusterIsBuilding(String clusterId) {
-		HTreeMap<String, String> hashMap = db.getDb().hashMap(clusterId);
-		String status = hashMap.get("status");
+		String status = clusterTaskDao.getClusterCurrentStatus(clusterId);
 		if (status.equals(TaskStatus.wait + "")) {
 			//首次执行 复制数据到临时位置
 			AnsibleCommondUtils.cpAnsibleFileToTmp(clusterId);
-			hashMap.put("status", TaskStatus.running + "");
-			db.getDb().commit();
+			clusterTaskDao.setClusterStatus(clusterId, TaskStatus.running);
 			return true;
 		} else if(status.equals(TaskStatus.running + "") ){
 			return true;
@@ -113,7 +112,7 @@ public class ProcessController implements IProcessController {
 			break;
 		case TaskStatus.fail:
 			runningToFail(clusterId, component);
-			setClusterStatus(clusterId, status);
+			clusterTaskDao.setClusterStatus(clusterId, status);
 			break;
 		case TaskStatus.noExist:
 			break;
@@ -122,24 +121,14 @@ public class ProcessController implements IProcessController {
 		}
 	}
 
-	private void setClusterStatus(String clusterId, Integer status) {
-		HTreeMap<String, String> hashMap = db.getDb().hashMap(clusterId);
-		hashMap.put("status", status + "");
-		db.getDb().commit();
-	}
-
 	private void runningToSuccess(String clusterId, String component) {
-		System.err.println("集群:" + clusterId + ", 任务:" + component + "执行成功");
-		org.mapdb.Atomic.Integer dbStep = db.getDb().atomicInteger(clusterId + "-" + component);
-		dbStep.set(TaskStatus.success);
-		db.getDb().commit();
+		log.error("集群:" + clusterId + " 过程中, 组件 : " + component + "执行成功");
+		componentDao.setComponentStatus(clusterId, component, TaskStatus.success);
 	}
 
 	private void runningToFail(String clusterId, String component) {
-		System.err.println("拉起集群:" + clusterId + ", 任务:" + component + "执行失败");
-		org.mapdb.Atomic.Integer dbStep = db.getDb().atomicInteger(clusterId + "-" + component);
-		dbStep.set(TaskStatus.fail);
-		db.getDb().commit();
+		log.error("部署集群: " + clusterId + " 过程中, 组件 : " + component + "执行失败");
+		componentDao.setComponentStatus(clusterId, component, TaskStatus.fail);;
 	}
 
 	public Context startStep(String clusterId, String component) {
@@ -150,10 +139,8 @@ public class ProcessController implements IProcessController {
 //			Process process = Runtime.getRuntime().exec("java -jar d://taskTest.jar " + component);
 			Context context = new Context(process, true, cmd, component);
 			// 异步推送日志到数据库
-			new WriteLogToDBThread(process.getInputStream(), clusterId + "-" +component, db).start();
-			org.mapdb.Atomic.Integer dbStep = db.getDb().atomicInteger(clusterId + "-" +component);
-			dbStep.set(TaskStatus.running);
-			db.getDb().commit();
+			new WriteLogToDBThread(process.getInputStream(), clusterId + "-" +component).start();
+			componentDao.setComponentStatus(clusterId, component, TaskStatus.running);
 			// 加入上下文
 			contextController.addContext(clusterId, component, context);
 			return context;
@@ -166,16 +153,16 @@ public class ProcessController implements IProcessController {
 
 	@Override
 	public void checkProcessResult() {
-		Set<String> clusters = db.getDb().hashSet("clusters");
+		List<String> clusters = clusterTaskDao.getAllClusterSet();
 		for (String clusterId : clusters) {
 			if (!clusterIsBuilding(clusterId)) {
 				continue;
 			}
 			// 1. 获取当前任务
 			String taskid = clusterTaskDao.getClusterCurrentTask(clusterId);
-			//是否执行过
+			//获取当前组件上下文
 			Context context = contextController.getContext(clusterId, taskid);
-			//未执行过不检查,等待start任务拉起
+			//空表示未执行过,等待start任务拉起
 			if(context == null) {
 				break;
 			}

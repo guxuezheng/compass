@@ -6,21 +6,24 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import org.mapdb.HTreeMap;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import compass.dao.IDBClient;
+import compass.dao.impl.DBClient;
 
+@Service
 public class WriteLogToDBThread extends Thread{
 	
 	private InputStream inputStream;
 	
 	private String taskID;
 	
-	private IDBClient db;
+	@Autowired
+	DBClient db;
 
-	public WriteLogToDBThread(InputStream inputStream,String taskID,IDBClient db) {
+	public WriteLogToDBThread(InputStream inputStream,String taskID) {
 		this.inputStream = inputStream;
 		this.taskID = taskID;
-		this.db = db;
 	}
 	public InputStream getInputStream() {
 		return inputStream;
