@@ -13,13 +13,12 @@ public class AnsibleCommondUtils {
 	private static String tmpRootDir = "/data";
 	
 	public static String getCheckAnsibleplaybookCmd(String clusterid,String component) {
-		String playbookPath = tmpRootDir + "/" + clusterid + "/" + "check_" + component + ".yml";
+		String playbookPath = tmpRootDir + "/" + clusterid + "/" + "check.yml";
 		String playbookVarPath = tmpRootDir + "/" + clusterid + "/inventory/hosts";
-		String cmd = "ansible-playbook " + playbookPath + " -i " + playbookVarPath;
+		String cmd = "ansible-playbook " + playbookPath + " -i " + playbookVarPath + " -t " + component;
 		log.info(cmd);
 		return cmd;
 	}
-	
 	
 	private static String getStartAnsibleplaybookPath(String clusterid,String component) {
 		return tmpRootDir + "/" + clusterid + "/" + component + ".yml";
@@ -34,9 +33,9 @@ public class AnsibleCommondUtils {
 		String playbookVarPath = getStartAnsibleplaybookVarPath(clusterid, component);
 		return "ansible-playbook " + playbookPath + " -i " + playbookVarPath;
 	}
-	
-	public static String getComponentStatusFilePath(String clusterid,String component) {
-		String path = tmpRootDir + "/" + clusterid + "/roles/check/" + component + "/result/" + component + "_status";
+
+	public static String getComponentStatusFilePath(String clusterid) {
+		String path = tmpRootDir + "/" + clusterid + "/roles/check/result/status";
 		return path;
 	}
 	
@@ -61,5 +60,12 @@ public class AnsibleCommondUtils {
 			e.printStackTrace();
 			return false;
 		}
+	}
+	
+//	ansible-playbook /data/sit/clean.yml -i /data/sit/inventory/hosts -t "clean_docker"
+	public static String uninstallComponent(String clusterid,String component) {
+		String playbookPath = tmpRootDir + "/" + clusterid + "/" + "clean.yml";
+		String playbookVarPath = tmpRootDir + "/" + clusterid + "/inventory/hosts";
+		return "ansible-playbook " + playbookPath + " -i " + playbookVarPath + " -t " + component;
 	}
 }

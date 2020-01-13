@@ -1,4 +1,4 @@
-package compass.bean;
+package compass.bean.runtime;
 
 public class Task {
 

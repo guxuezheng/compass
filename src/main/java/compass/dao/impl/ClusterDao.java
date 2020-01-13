@@ -11,8 +11,8 @@ import org.mapdb.HTreeMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import compass.bean.ClusterTask;
-import compass.bean.Task;
+import compass.bean.runtime.ClusterTask;
+import compass.bean.runtime.Task;
 import compass.dao.IClusterDao;
 import compass.dao.IComponentDao;
 import compass.status.TaskStatus;

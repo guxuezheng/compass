@@ -89,7 +89,7 @@ public class ProcessController implements IProcessController {
 				}
 				break;
 			}
-			return getComponentStatus(clusterId, component);
+			return getComponentStatus(clusterId);
 		}catch(Exception e) {
 			e.printStackTrace();
 			return TaskStatus.fail;
@@ -176,9 +176,9 @@ public class ProcessController implements IProcessController {
 	}
 	
 	
-	private Integer getComponentStatus(String clusterid,String component) {
+	private Integer getComponentStatus(String clusterid) {
 		try {
-			String path = AnsibleCommondUtils.getComponentStatusFilePath(clusterid, component);
+			String path = AnsibleCommondUtils.getComponentStatusFilePath(clusterid);
 			log.info("cat " + path);
 			File file = new File(path);
 			FileReader reader = new FileReader(file);

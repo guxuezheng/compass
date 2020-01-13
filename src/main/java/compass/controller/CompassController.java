@@ -16,9 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
-import compass.bean.ClusterTask;
-import compass.bean.Task;
-import compass.bean.ansiblevar.Docker;
+import compass.bean.runtime.ClusterTask;
+import compass.bean.runtime.Task;
 import compass.dao.IClusterDao;
 import compass.dao.IDBClient;
 import compass.runtime.Crontab;
@@ -79,8 +78,7 @@ public class CompassController {
 		// List<String> allCluster = clusterTaskDao.getAllClusterSet();
 		// JSONArray json = (JSONArray) JSONArray.toJSON(allCluster);
 		
-		Docker docker = new Docker();
-		JSONObject json = (JSONObject) JSONObject.toJSON(docker);
+		JSONObject json = (JSONObject) JSONObject.toJSON(new Object());
 		return json;
 	}
 

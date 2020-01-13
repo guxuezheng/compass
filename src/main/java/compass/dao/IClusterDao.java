@@ -3,8 +3,8 @@ package compass.dao;
 import java.util.List;
 import java.util.Map;
 
-import compass.bean.ClusterTask;
-import compass.bean.Task;
+import compass.bean.runtime.ClusterTask;
+import compass.bean.runtime.Task;
 
 public interface IClusterDao {
 	

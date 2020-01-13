@@ -1,4 +1,4 @@
-package compass.bean;
+package compass.bean.runtime;
 
 import java.util.List;
 
