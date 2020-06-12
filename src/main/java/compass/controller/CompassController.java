@@ -89,14 +89,16 @@ public class CompassController {
 	 */
 	private List<Task> getTestTask() {
 		List<Task> list = new ArrayList<Task>();
-		Task task1 = new Task("1", "docker", null);
-//		Task task2 = new Task("2", "harbor", null);
-//		Task task3 = new Task("3", "kubernetes", null);
-//		Task task4 = new Task("4", "addons", null);
+		Task task1 = new Task("1", "environment", null);
+		Task task2 = new Task("2", "docker", null);
+		Task task3 = new Task("3", "harbor", null);
+		Task task4 = new Task("4", "kube-single-master", null);
+		Task task5 = new Task("5", "kube-node", null);
 		list.add(task1);
-//		list.add(task2);
-//		list.add(task3);
-//		list.add(task4);
+		list.add(task2);
+		list.add(task3);
+		list.add(task4);
+		list.add(task5);
 		return list;
 	}
 }

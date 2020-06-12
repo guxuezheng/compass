@@ -15,6 +15,7 @@ import compass.bean.runtime.ClusterTask;
 import compass.bean.runtime.Task;
 import compass.dao.IClusterDao;
 import compass.dao.IComponentDao;
+import compass.runtime.AnsibleCommondUtils;
 import compass.status.TaskStatus;
 
 /**
@@ -49,6 +50,7 @@ public class ClusterDao implements IClusterDao {
 	 *  # $clusterId-kubernetes: k8s组件 
 	 *  # $clusterId-gfs: gfs组件 
 	 *  # $clusterId-ceph: ceph组件 
+	 *  # $clusterId-kube-master
 	 *  # current: 当前位置 
 	 *  # taskSize: 任务长度 
 	 *  数据格式为: 
@@ -70,11 +72,11 @@ public class ClusterDao implements IClusterDao {
 	public Map<String, String> createClusterTaskMap(String clusterId, String current, List<Task> tasks) {
 		String cluterMapName = clusterId;
 		//复制安装包到临时目录
-//		boolean cpSuccess = AnsibleCommondUtils.cpAnsibleFileToTmp(clusterId);
-//		if(!cpSuccess) {
-//			log.error("Copying files failed : clusterid = " + clusterId);
-//			return null;
-//		}
+		boolean cpSuccess = AnsibleCommondUtils.cpAnsibleFileToTmp(clusterId);
+		if(!cpSuccess) {
+			log.error("Copying files failed : clusterid = " + clusterId);
+			return null;
+		}
 		boolean insertSuccess = insertCluserToClusterSet(clusterId);
 		if(!insertSuccess) {
 			log.error("insert clusters to clusterset failed : clusterid = " + clusterId);
@@ -146,7 +148,7 @@ public class ClusterDao implements IClusterDao {
 				continue;
 			}
 			if(clusterMap.get(key).equals(current)) {
-				return key.split("-")[1];
+				return key.replace(clusterId + "-", "");
 			}
 		}
 		return null;

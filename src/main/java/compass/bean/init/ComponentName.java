@@ -8,6 +8,8 @@ package compass.bean.init;
  */
 public class ComponentName {
 	
+	public static final String environment = "environment";
+	
 	public static final String docker = "docker";
 	
 	public static final String harbor = "harbor";

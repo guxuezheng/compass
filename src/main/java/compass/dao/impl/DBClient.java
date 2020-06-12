@@ -15,9 +15,9 @@ public class DBClient implements IDBClient{
 	
 	private static DB db;
 	
-//	private final String defaultDBDir = "/data/mapdb";
+	private final String defaultDBDir = "/data/mapdb";
 	
-	private final String defaultDBDir = "F:\\mapdb\\mapdb";
+//	private final String defaultDBDir = "F:\\mapdb\\mapdb";
 
 	@Override
 	public DB getDb() {

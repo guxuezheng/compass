@@ -11,10 +11,12 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import compass.bean.init.ComponentName;
 import compass.context.Context;
 import compass.context.IContextController;
 import compass.dao.IClusterDao;
 import compass.dao.IComponentDao;
+import compass.dao.IDBClient;
 import compass.status.TaskStatus;
 
 @Service
@@ -22,8 +24,8 @@ public class ProcessController implements IProcessController {
 
 	Logger log = LogManager.getLogger(ProcessController.class);
 
-//	@Autowired
-//	DBClient db;
+	@Autowired
+	IDBClient db;
 	@Autowired
 	IClusterDao clusterTaskDao;
 	@Autowired
@@ -40,18 +42,22 @@ public class ProcessController implements IProcessController {
 				continue;
 			}
 			// 1. 获取当前任务
-			String taskid = clusterTaskDao.getClusterCurrentTask(clusterId);
-			// 2. 查看当前任务是否已经被标记为异常
-			Integer taskStatus = componentDao.getComponentStatus(taskid);
+			String component = clusterTaskDao.getClusterCurrentTask(clusterId);
+			// 2. 过滤不需要执行的任务
+			if(componentIsEnvironment(component)) {
+				break;
+			}
+			// 3. 查看当前任务是否已经被标记为异常
+			Integer taskStatus = componentDao.getComponentStatus(component);
 			if (taskStatus == TaskStatus.fail) {
-				log.info(taskid + " 任务状态码为 " + taskStatus + " 不进行处理...");
+				log.info(component + " 任务状态码为 " + taskStatus + " 不进行处理...");
 				break;
 			}
 			// 3. 查看任务进程是否执行过
-			boolean processIsExecuted = contextController.processIsExecuted(clusterId, taskid);
+			boolean processIsExecuted = contextController.processIsExecuted(clusterId, component);
 			if (!processIsExecuted) {
-				log.info(taskid + " 任务首次执行,拉起任务进程.");
-				startStep(clusterId, taskid);
+				log.info(component + " 任务首次执行,拉起任务进程.");
+				startStep(clusterId, component);
 			}
 		}
 	}
@@ -60,7 +66,7 @@ public class ProcessController implements IProcessController {
 		String status = clusterTaskDao.getClusterCurrentStatus(clusterId);
 		if (status.equals(TaskStatus.wait + "")) {
 			//首次执行 复制数据到临时位置
-			AnsibleCommondUtils.cpAnsibleFileToTmp(clusterId);
+//			AnsibleCommondUtils.cpAnsibleFileToTmp(clusterId);
 			clusterTaskDao.setClusterStatus(clusterId, TaskStatus.running);
 			return true;
 		} else if(status.equals(TaskStatus.running + "") ){
@@ -82,6 +88,7 @@ public class ProcessController implements IProcessController {
 		try {
 			String checkAnsibleplaybookCmd = AnsibleCommondUtils.getCheckAnsibleplaybookCmd(clusterId, component);
 			Process process = Runtime.getRuntime().exec(checkAnsibleplaybookCmd);
+			new WriteLogToDBThread(process.getInputStream(), clusterId + "-" +component,db).start();
 			while(true) {
 				if(process.isAlive()) {
 					Thread.sleep(1000);
@@ -139,7 +146,7 @@ public class ProcessController implements IProcessController {
 //			Process process = Runtime.getRuntime().exec("java -jar d://taskTest.jar " + component);
 			Context context = new Context(process, true, cmd, component);
 			// 异步推送日志到数据库
-			new WriteLogToDBThread(process.getInputStream(), clusterId + "-" +component).start();
+			new WriteLogToDBThread(process.getInputStream(), clusterId + "-" +component,db).start();
 			componentDao.setComponentStatus(clusterId, component, TaskStatus.running);
 			// 加入上下文
 			contextController.addContext(clusterId, component, context);
@@ -158,23 +165,35 @@ public class ProcessController implements IProcessController {
 			if (!clusterIsBuilding(clusterId)) {
 				continue;
 			}
-			// 1. 获取当前任务
-			String taskid = clusterTaskDao.getClusterCurrentTask(clusterId);
+			String component = clusterTaskDao.getClusterCurrentTask(clusterId);
+			//判断任务是否属于基础环境检查
+			if(componentIsEnvironment(component)) {
+				Integer componentStatus = checkComponentStatus(clusterId, component);
+				setComponentStatus(clusterId, componentStatus, component);
+				return;
+			}
 			//获取当前组件上下文
-			Context context = contextController.getContext(clusterId, taskid);
+			Context context = contextController.getContext(clusterId, component);
 			//空表示未执行过,等待start任务拉起
 			if(context == null) {
 				break;
 			}
 			if (contextController.processIsRunning(context)) {
-				log.info(taskid + " 进程处于执行中");
+				log.info(component + " 进程处于执行中");
 				break;
 			}
-			Integer componentStatus = checkComponentStatus(clusterId, taskid);
-			setComponentStatus(clusterId, componentStatus, taskid);
+			Integer componentStatus = checkComponentStatus(clusterId, component);
+			setComponentStatus(clusterId, componentStatus, component);
 		}
 	}
 	
+	private boolean componentIsEnvironment(String component) {
+		if(ComponentName.environment.equals(component)) {
+			return true;
+		}else {
+			return false;
+		}
+	}
 	
 	private Integer getComponentStatus(String clusterid) {
 		try {
